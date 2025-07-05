@@ -3,40 +3,49 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>D3.js Example</title>
+  <title>Load Word List (No Headers)</title>
   <style>
-    /* Add your CSS styles here */
     body {
       font-family: sans-serif;
       background: #f4f4f4;
       margin: 0;
       padding: 0;
     }
-    svg {
+    pre {
+      background: #fff;
+      padding: 1em;
+      margin: 20px;
       border: 1px solid #ccc;
-      background: white;
-      display: block;
-      margin: 20px auto;
+      overflow: auto;
     }
   </style>
 </head>
 <body>
 
-  <h1 style="text-align: center;">D3.js Visualization</h1>
-  <svg width="600" height="400"></svg>
+  <h1 style="text-align: center;">Scrabble Words (No Headers)</h1>
+  <pre id="output">Loading...</pre>
+  <p></p>
 
   <!-- D3.js v7 -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script>
-    // Your D3 code here
-    const svg = d3.select("svg");
+    let data = [];
 
-    svg.append("circle")
-      .attr("cx", 300)
-      .attr("cy", 200)
-      .attr("r", 50)
-      .attr("fill", "steelblue");
+        d3.selectAll("p").text("a")
+
+    d3.text("Scrabble.txt").then(function(text) {
+      // Split text by newline, remove empty lines
+      data = text.split(/\r?\n/).filter(d => d.trim().length > 0);
+
+      // Output sample to page and log to console
+      document.getElementById("output").textContent = JSON.stringify(data.slice(0, 50), null, 2);
+      console.log("Loaded words:", data);
+      d3.selectAll("p").text(data)
+    }).catch(function(error) {
+      console.error("Error loading the CSV file:", error);
+      document.getElementById("output").textContent = "Error loading CSV. Check the console.";
+    });
+
   </script>
 </body>
 </html>
-
