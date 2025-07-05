@@ -3,49 +3,102 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Load Word List (No Headers)</title>
+  <title>Highest Scoring Words (Scrabble)</title>
   <style>
     body {
       font-family: sans-serif;
       background: #f4f4f4;
       margin: 0;
-      padding: 0;
+      padding: 20px;
     }
-    pre {
+    #outpt {
+      white-space: pre-wrap;
+      font-family: monospace;
       background: #fff;
-      padding: 1em;
-      margin: 20px;
       border: 1px solid #ccc;
-      overflow: auto;
+      padding: 1em;
+      margin-top: 20px;
+      max-height: 80vh;
+      overflow-y: auto;
     }
   </style>
 </head>
 <body>
 
-  <h1 style="text-align: center;">Scrabble Words (No Headers)</h1>
-  <pre id="output">Loading...</pre>
-  <p></p>
+  <h1>Highest Scoring Words (Scrabble)</h1>
+  <input id="ll" type="checkbox">
+  <label for="ll">Limit length (7 letters)</label>
+  <button id="rn">Run</button>
 
-  <!-- D3.js v7 -->
+  <div id="outpt">Loading words...</div>
+
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script>
     let data = [];
 
-        d3.selectAll("p").text("a")
+    const tiles = [
+      { l: "A", n: "9", p: 1 },
+      { l: "B", n: "2", p: 3 },
+      { l: "C", n: "2", p: 3 },
+      { l: "D", n: "4", p: 2 },
+      { l: "E", n: "12", p: 1 },
+      { l: "F", n: "2", p: 4 },
+      { l: "G", n: "3", p: 2 },
+      { l: "H", n: "2", p: 4 },
+      { l: "I", n: "9", p: 1 },
+      { l: "J", n: "1", p: 8 },
+      { l: "K", n: "1", p: 5 },
+      { l: "L", n: "4", p: 1 },
+      { l: "M", n: "2", p: 3 },
+      { l: "N", n: "6", p: 1 },
+      { l: "O", n: "8", p: 1 },
+      { l: "P", n: "2", p: 3 },
+      { l: "Q", n: "1", p: 10 },
+      { l: "R", n: "6", p: 1 },
+      { l: "S", n: "4", p: 1 },
+      { l: "T", n: "6", p: 1 },
+      { l: "U", n: "4", p: 1 },
+      { l: "V", n: "2", p: 4 },
+      { l: "W", n: "2", p: 4 },
+      { l: "X", n: "1", p: 8 },
+      { l: "Y", n: "2", p: 4 },
+      { l: "Z", n: "1", p: 10 },
+    ];
+
+    const getLetterPoints = (letter) => {
+      letter = letter.toUpperCase();
+      const match = tiles.find(t => t.l === letter);
+      return match ? match.p : 0;
+    };
+
+    const scoreWord = (word) => {
+      return word.split('').reduce((sum, ch) => sum + getLetterPoints(ch), 0);
+    };
 
     d3.text("Scrabble.txt").then(function(text) {
-      // Split text by newline, remove empty lines
       data = text.split(/\r?\n/).filter(d => d.trim().length > 0);
 
-      // Output sample to page and log to console
-      document.getElementById("output").textContent = JSON.stringify(data.slice(0, 50), null, 2);
-      console.log("Loaded words:", data);
-      d3.selectAll("p").text(data)
-    }).catch(function(error) {
-      console.error("Error loading the CSV file:", error);
-      document.getElementById("output").textContent = "Error loading CSV. Check the console.";
-    });
+      document.getElementById("rn").addEventListener("click", function () {
+        const limit7 = document.getElementById("ll").checked;
 
+        // Filter and score
+        let scored = data
+          .filter(w => /^[a-zA-Z]+$/.test(w)) // only alphabetic words
+          .filter(w => !limit7 || w.length === 7)
+          .map(w => ({ word: w, score: scoreWord(w) }))
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 100); // show top 100 for performance
+
+        // Format output
+        const output = scored.map(d => `${d.word} (${d.score})`).join('\n');
+        document.getElementById("outpt").textContent = output;
+      });
+
+      document.getElementById("outpt").textContent = `Loaded ${data.length} words. Click "Run" to begin.`;
+    }).catch(function(error) {
+      console.error("Error loading Scrabble.txt:", error);
+      document.getElementById("outpt").textContent = "Failed to load word list.";
+    });
   </script>
 </body>
 </html>
