@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Highest Scoring Words (Scrabble)</title>
+  <title>Scrabble Word Scorer</title>
   <style>
     body {
       font-family: sans-serif;
@@ -26,8 +26,9 @@
 <body>
 
   <h1>Highest Scoring Words (Scrabble)</h1>
-  <input id="ll" type="checkbox">
-  <label for="ll">Limit length (7 letters)</label>
+
+  <label><input id="ll" type="checkbox"> Limit to 7-letter words</label><br>
+  <label><input id="lt" type="checkbox"> Respect tile letter limits (Scrabble rules)</label><br>
   <button id="rn">Run</button>
 
   <div id="outpt">Loading words...</div>
@@ -37,66 +38,73 @@
     let data = [];
 
     const tiles = [
-      { l: "A", n: "9", p: 1 },
-      { l: "B", n: "2", p: 3 },
-      { l: "C", n: "2", p: 3 },
-      { l: "D", n: "4", p: 2 },
-      { l: "E", n: "12", p: 1 },
-      { l: "F", n: "2", p: 4 },
-      { l: "G", n: "3", p: 2 },
-      { l: "H", n: "2", p: 4 },
-      { l: "I", n: "9", p: 1 },
-      { l: "J", n: "1", p: 8 },
-      { l: "K", n: "1", p: 5 },
-      { l: "L", n: "4", p: 1 },
-      { l: "M", n: "2", p: 3 },
-      { l: "N", n: "6", p: 1 },
-      { l: "O", n: "8", p: 1 },
-      { l: "P", n: "2", p: 3 },
-      { l: "Q", n: "1", p: 10 },
-      { l: "R", n: "6", p: 1 },
-      { l: "S", n: "4", p: 1 },
-      { l: "T", n: "6", p: 1 },
-      { l: "U", n: "4", p: 1 },
-      { l: "V", n: "2", p: 4 },
-      { l: "W", n: "2", p: 4 },
-      { l: "X", n: "1", p: 8 },
-      { l: "Y", n: "2", p: 4 },
-      { l: "Z", n: "1", p: 10 },
+      { l: "A", n: 9, p: 1 },
+      { l: "B", n: 2, p: 3 },
+      { l: "C", n: 2, p: 3 },
+      { l: "D", n: 4, p: 2 },
+      { l: "E", n: 12, p: 1 },
+      { l: "F", n: 2, p: 4 },
+      { l: "G", n: 3, p: 2 },
+      { l: "H", n: 2, p: 4 },
+      { l: "I", n: 9, p: 1 },
+      { l: "J", n: 1, p: 8 },
+      { l: "K", n: 1, p: 5 },
+      { l: "L", n: 4, p: 1 },
+      { l: "M", n: 2, p: 3 },
+      { l: "N", n: 6, p: 1 },
+      { l: "O", n: 8, p: 1 },
+      { l: "P", n: 2, p: 3 },
+      { l: "Q", n: 1, p: 10 },
+      { l: "R", n: 6, p: 1 },
+      { l: "S", n: 4, p: 1 },
+      { l: "T", n: 6, p: 1 },
+      { l: "U", n: 4, p: 1 },
+      { l: "V", n: 2, p: 4 },
+      { l: "W", n: 2, p: 4 },
+      { l: "X", n: 1, p: 8 },
+      { l: "Y", n: 2, p: 4 },
+      { l: "Z", n: 1, p: 10 },
     ];
 
-    const getLetterPoints = (letter) => {
-      letter = letter.toUpperCase();
-      const match = tiles.find(t => t.l === letter);
-      return match ? match.p : 0;
-    };
+    const tileMap = {};
+    tiles.forEach(t => tileMap[t.l] = t);
 
-    const scoreWord = (word) => {
-      return word.split('').reduce((sum, ch) => sum + getLetterPoints(ch), 0);
+    const scoreWord = (word) =>
+      word.toUpperCase().split('').reduce((sum, ch) => sum + (tileMap[ch]?.p || 0), 0);
+
+    const isValidTileUsage = (word) => {
+      const letterCount = {};
+      for (let ch of word.toUpperCase()) {
+        letterCount[ch] = (letterCount[ch] || 0) + 1;
+        if (letterCount[ch] > (tileMap[ch]?.n || 0)) {
+          return false;
+        }
+      }
+      return true;
     };
 
     d3.text("Scrabble.txt").then(function(text) {
       data = text.split(/\r?\n/).filter(d => d.trim().length > 0);
 
       document.getElementById("rn").addEventListener("click", function () {
-        const limit7 = document.getElementById("ll").checked;
+        const limitLength = document.getElementById("ll").checked;
+        const limitTiles = document.getElementById("lt").checked;
 
-        // Filter and score
-        let scored = data
-          .filter(w => /^[a-zA-Z]+$/.test(w)) // only alphabetic words
-          .filter(w => !limit7 || w.length === 7)
+        let results = data
+          .filter(w => /^[a-zA-Z]+$/.test(w))
+          .map(w => w.toUpperCase())
+          .filter(w => !limitLength || w.length === 7)
+          .filter(w => !limitTiles || isValidTileUsage(w))
           .map(w => ({ word: w, score: scoreWord(w) }))
           .sort((a, b) => b.score - a.score)
-          .slice(0, 100); // show top 100 for performance
+          .slice(0, 100);
 
-        // Format output
-        const output = scored.map(d => `${d.word} (${d.score})`).join('\n');
-        document.getElementById("outpt").textContent = output;
+        document.getElementById("outpt").textContent = results.map(d => `${d.word} (${d.score})`).join('\n');
       });
 
       document.getElementById("outpt").textContent = `Loaded ${data.length} words. Click "Run" to begin.`;
     }).catch(function(error) {
-      console.error("Error loading Scrabble.txt:", error);
+      console.error("Error loading word list:", error);
       document.getElementById("outpt").textContent = "Failed to load word list.";
     });
   </script>
